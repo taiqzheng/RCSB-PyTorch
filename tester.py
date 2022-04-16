@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from data import generate_loader
 from tqdm import tqdm
 from utils import calculate_mae
+import datetime # new, show time on result(the pred_sal and pred_ctr)
 
 
 class Tester():
@@ -47,7 +48,7 @@ class Tester():
 
             b, c, h, w = MASK.shape
 
-            SOD = self.net(IMG)
+            SOD = self.net(IMG)  # get all the sal & ctr, shape (1, 1, 256, 256),later resize the result back to(1, 1, h, w)  
 
             MASK = MASK.squeeze().detach().cpu().numpy()
             pred_sal, pred_ctr = SOD['sal'][-1], SOD['ctr'][-1]
@@ -60,8 +61,10 @@ class Tester():
             pred_ctr_img = (pred_ctr * 255.).astype('uint8')
 
             if opt.save_result:
-                save_path_sal = os.path.join(save_root, "{}_sal.png".format(NAME))
-                save_path_ctr = os.path.join(save_root, "{}_ctr.png".format(NAME))
+                curr_time = datetime.datetime.now()
+                time_str = curr_time.strftime("%Y-%m-%d %H:%M")
+                save_path_sal = os.path.join(save_root, "{}_sal_{}.png".format(NAME, time_str))
+                save_path_ctr = os.path.join(save_root, "{}_ctr_{}.png".format(NAME, time_str))
                 io.imsave(save_path_sal, pred_sal_img)
                 io.imsave(save_path_ctr, pred_ctr_img)
                 if opt.save_all:

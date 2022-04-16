@@ -7,6 +7,7 @@ from utils import LogWritter, calculate_mae
 from data import generate_loader
 from loss_fn import ConfidentLoss
 from tqdm import tqdm
+import datetime # new, show time on result(the pred_sal and pred_ctr)
 
 class Solver():
     def __init__(self, module, opt):
@@ -116,8 +117,10 @@ class Solver():
             pred_ctr = torch.sigmoid(pred_ctr).squeeze().detach().cpu().numpy()
 
             if opt.save_result:
-                save_path_sal = os.path.join(save_root, "{}_sal.png".format(NAME))
-                save_path_ctr = os.path.join(save_root, "{}_ctr.png".format(NAME))
+                curr_time = datetime.datetime.now()       # add time in the name of result
+                time_str = curr_time.strftime("%Y-%m-%d %H:%M")
+                save_path_sal = os.path.join(save_root, "{}_sal_{}.png".format(NAME, time_str))
+                save_path_ctr = os.path.join(save_root, "{}_ctr_{}.png".format(NAME, time_str))
                 io.imsave(save_path_sal, pred_sal)
                 io.imsave(save_path_ctr, pred_ctr)
 

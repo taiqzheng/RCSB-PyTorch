@@ -52,7 +52,8 @@ class BaseDataset(torch.utils.data.Dataset):
             index = index % len(self.MASK)
 
         MASK, IMG = self.MASK[index], self.IMG[index]
-        MASK = color.rgb2gray(MASK)
+        if len(MASK.shape) == 3:   # new
+            MASK = color.rgb2gray(MASK)
         NAME = (os.path.split(self.MASK_paths[index])[1]).split('.')[0]
 
         if len(IMG.shape) < 3:
