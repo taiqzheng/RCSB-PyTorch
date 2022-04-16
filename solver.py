@@ -31,7 +31,7 @@ class Solver():
                 base.append(param)
             else:
                 head.append(param)
-        assert base!=[], 'backbone is empty'
+        #assert base!=[], 'backbone is empty'
         self.optim = torch.optim.Adam([{'params':base},{'params':head}], opt.lr,betas=(0.9, 0.999), eps=1e-8)
 
         self.train_loader = generate_loader("train", opt)

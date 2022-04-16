@@ -2,6 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
+from efficientnet_pytorch import EfficientNet
+# from EfficientNet import EfficientNet
+# from effi_utils import efficientnet
 
 
 class CSFBUnit(nn.Module):
@@ -77,7 +80,10 @@ class ChannelAdapter(nn.Module):
         super(ChannelAdapter,self).__init__()
         self.n = reduction
         self.reduce = num_features>64
-        self.conv = nn.Sequential(nn.Conv2d(num_features//self.n if self.reduce else reduce_to,
+        # self.conv = nn.Sequential(nn.Conv2d(num_features//self.n if self.reduce else reduce_to,
+        #                                     reduce_to,kernel_size=3,padding=1, bias=True),
+        #                           nn.LeakyReLU(inplace=True))
+        self.conv = nn.Sequential(nn.Conv2d(num_features//self.n if self.reduce else num_features,
                                             reduce_to,kernel_size=3,padding=1, bias=True),
                                   nn.LeakyReLU(inplace=True))
         
@@ -136,14 +142,16 @@ class Net(nn.Module):
         G = opt.G
         R = opt.R
 
-        resnet50 = models.resnet50(pretrained=True)
-        head = list(resnet50.children())[:3]
-        self.backbone0 = nn.Sequential(*head)
-        self.pool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.backbone1 = resnet50.layer1
-        self.backbone2 = resnet50.layer2
-        self.backbone3 = resnet50.layer3
-        self.backbone4 = resnet50.layer4
+        # resnet50 = models.resnet50(pretrained=True)
+        # head = list(resnet50.children())[:3]
+        # self.backbone0 = nn.Sequential(*head)
+        # self.pool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        # self.backbone1 = resnet50.layer1
+        # self.backbone2 = resnet50.layer2
+        # self.backbone3 = resnet50.layer3
+        # self.backbone4 = resnet50.layer4
+        self.model = EfficientNet.from_pretrained('efficientnet-b0')
+
 
         self.CSFB0 = nn.Sequential(*[CSFBBlock(num_features, R=R) for i in range(3*G)])
         self.CSFB1 = nn.Sequential(*[CSFBBlock(num_features, R=R) for i in range(3*G)])
@@ -162,18 +170,25 @@ class Net(nn.Module):
         self.merge_end = MergeAdapter(in_features=5,
                                       out_features=num_features)
 
-        self.adapter = nn.ModuleList([ChannelAdapter(num_features=channel) for channel in [64, 256, 512, 1024, 2048]])
+        # self.adapter = nn.ModuleList([ChannelAdapter(num_features=channel) for channel in [64, 256, 512, 1024, 2048]])
+        self.adapter = nn.ModuleList([ChannelAdapter(num_features=channel) for channel in [16, 24, 40, 112, 1280]])
         self.sal_final_scale = nn.Parameter(torch.tensor(1.), requires_grad=True)
         self.ctr_final_scale = nn.Parameter(torch.tensor(1.), requires_grad=True)
 
     def forward(self, x):
         
-        out0 = self.backbone0(x)
-        out0_p = self.pool(out0)
-        out1 = self.backbone1(out0_p)
-        out2 = self.backbone2(out1)
-        out3 = self.backbone3(out2)
-        out4 = self.backbone4(out3)
+        # out0 = self.backbone0(x)
+        # out0_p = self.pool(out0)
+        # out1 = self.backbone1(out0_p)
+        # out2 = self.backbone2(out1)
+        # out3 = self.backbone3(out2)
+        # out4 = self.backbone4(out3)
+        endpoints = self.model.extract_endpoints(x)
+        out0 = endpoints['reduction_1']
+        out1 = endpoints['reduction_2']
+        out2 = endpoints['reduction_3']
+        out3 = endpoints['reduction_4']
+        out4 = endpoints['reduction_6']
         
         A0 = self.adapter[0](out0)
         A1 = self.adapter[1](out1)
