@@ -5,7 +5,7 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=1)
 
     # models
-    parser.add_argument("--pretrain", type=str, default="RCSB.pt")
+    parser.add_argument("--pretrain", type=str, default="31.pt")
     parser.add_argument("--model", type=str, default="RCSB")
     parser.add_argument("--GPU_ID", type=int, default=0)
 
@@ -32,8 +32,8 @@ def parse_args():
                         help="lambda in loss function, it is divided by 10 to make it float, so here use integer")
 
     # misc
-    parser.add_argument("--test_only", action="store_true", default=False, help="test mode")
-    parser.add_argument("--save_every_ckpt", action="store_true", default=True, help="save every ckpt")
+    parser.add_argument("--test_only", action="store_true", default=True, help="test mode")
+    parser.add_argument("--save_every_ckpt", action="store_true", default=False, help="save every ckpt")
     parser.add_argument("--save_result", action="store_true", default=True, help="save last stage's pred")
     parser.add_argument("--save_all", action="store_true", help="save all stages' pred")
     parser.add_argument("--ckpt_root", type=str, default="/root/RCSB-PyTorch/ckpt")
