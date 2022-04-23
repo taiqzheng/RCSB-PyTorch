@@ -1,0 +1,8 @@
+RCSB.pt
+__pycache__/
+ckpt/
+data/__pycache__/
+dataset/
+dataset/
+model/__pycache__/
+output/
