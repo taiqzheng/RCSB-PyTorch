@@ -5,7 +5,7 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=1)
 
     # models
-    parser.add_argument("--pretrain", type=str, default="RCSB.pt")
+    parser.add_argument("--pretrain", type=str, default="1-9_best.pt")
     parser.add_argument("--model", type=str, default="RCSB")
     parser.add_argument("--GPU_ID", type=int, default=0)
 
@@ -19,7 +19,7 @@ def parse_args():
     parser.add_argument("--decay", type=str, default="20-40-60-80")
     parser.add_argument("--decay_step", type=int, default=20)
     parser.add_argument("--patch_size", type=int, default=224) # 256 for resnet-50, 224 for efficientnet-b0
-    parser.add_argument("--batch_size", type=int, default=1)
+    parser.add_argument("--batch_size", type=int, default=4)
     parser.add_argument("--max_epoch", type=int, default=100)
     parser.add_argument("--num_workers", type=int, default=8)
     parser.add_argument("--num_features", type=int, default=64)
@@ -34,7 +34,7 @@ def parse_args():
     # misc
     parser.add_argument("--test_only", action="store_true", default=False, help="test mode")
     parser.add_argument("--save_every_ckpt", action="store_true", default=True, help="save every ckpt")
-    parser.add_argument("--save_result", action="store_true", default=True, help="save last stage's pred")
+    parser.add_argument("--save_result", action="store_true", default=False, help="save last stage's pred")
     parser.add_argument("--save_all", action="store_true", help="save all stages' pred")
     parser.add_argument("--ckpt_root", type=str, default="/root/RCSB-PyTorch/ckpt")
     parser.add_argument("--save_root", type=str, default="/root/RCSB-PyTorch/output")
