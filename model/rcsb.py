@@ -2,9 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
-from efficientnet_pytorch import EfficientNet
-# from EfficientNet import EfficientNet
-# from effi_utils import efficientnet
+from model.effi_model import EfficientNet
+from model.effi_utils import efficientnet
 
 
 class CSFBUnit(nn.Module):
@@ -142,27 +141,21 @@ class Net(nn.Module):
         G = opt.G
         R = opt.R
 
-        # resnet50 = models.resnet50(pretrained=True)
-        # head = list(resnet50.children())[:3]
-        # self.backbone0 = nn.Sequential(*head)
-        # self.pool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        # self.backbone1 = resnet50.layer1
-        # self.backbone2 = resnet50.layer2
-        # self.backbone3 = resnet50.layer3
-        # self.backbone4 = resnet50.layer4
         self.model = EfficientNet.from_pretrained('efficientnet-b0')
 
-
-        self.CSFB0 = nn.Sequential(*[CSFBBlock(num_features, R=R) for i in range(3*G)])
-        self.CSFB1 = nn.Sequential(*[CSFBBlock(num_features, R=R) for i in range(3*G)])
+        self.CSFB0 = nn.Sequential(*[CSFBBlock(num_features, R=R) for i in range(2*G)])
+        self.CSFB1 = nn.Sequential(*[CSFBBlock(num_features, R=R) for i in range(2*G)])
         self.CSFB2 = nn.Sequential(*[CSFBBlock(num_features, R=R) for i in range(2*G)])
         self.CSFB3 = nn.Sequential(*[CSFBBlock(num_features, R=R) for i in range(2*G)])
         self.CSFB4 = nn.Sequential(*[CSFBBlock(num_features, R=R) for i in range(1*G)])
 
+        self.CSFB_E0 = nn.Sequential(*[CSFBBlock(num_features, R=R) for i in range(1*G)])
+        self.CSFB_E1 = nn.Sequential(*[CSFBBlock(num_features, R=R) for i in range(1*G)])
+
         self.CSFB_end = nn.Sequential(*[CSFBBlock(num_features, R=R) for i in range(5 * G)])
         self.final_sal = nn.Conv2d(num_features, 1, 3, padding=1, bias=True)
         self.final_ctr = nn.Conv2d(num_features, 1, 3, padding=1, bias=True)
-        self.map_gen = nn.ModuleList([MapAdapter(num_features) for i in range(5)])
+        self.map_gen = nn.ModuleList([MapAdapter(num_features) for i in range(7)])
 
         self.merge = nn.ModuleList([MergeAdapter(in_features=num_features*2,
                                                  out_features=num_features) for i in range(4)])
@@ -172,29 +165,28 @@ class Net(nn.Module):
 
         # self.adapter = nn.ModuleList([ChannelAdapter(num_features=channel) for channel in [64, 256, 512, 1024, 2048]])
         self.adapter = nn.ModuleList([ChannelAdapter(num_features=channel) for channel in [16, 24, 40, 112, 1280]])
+        self.adapterEdge = nn.ModuleList([ChannelAdapter(num_features=channel) for channel in [16, 24]])
         self.sal_final_scale = nn.Parameter(torch.tensor(1.), requires_grad=True)
         self.ctr_final_scale = nn.Parameter(torch.tensor(1.), requires_grad=True)
 
     def forward(self, x):
         
-        # out0 = self.backbone0(x)
-        # out0_p = self.pool(out0)
-        # out1 = self.backbone1(out0_p)
-        # out2 = self.backbone2(out1)
-        # out3 = self.backbone3(out2)
-        # out4 = self.backbone4(out3)
-        endpoints = self.model.extract_endpoints(x)
+        endpoints, edgeRefined = self.model.extract_endpoints(x)
         out0 = endpoints['reduction_1']
         out1 = endpoints['reduction_2']
         out2 = endpoints['reduction_3']
         out3 = endpoints['reduction_4']
         out4 = endpoints['reduction_6']
+        edge0 = edgeRefined['refined_1']
+        edge1 = edgeRefined['refined_2']
         
         A0 = self.adapter[0](out0)
         A1 = self.adapter[1](out1)
         A2 = self.adapter[2](out2)
         A3 = self.adapter[3](out3)
         A4 = self.adapter[4](out4)
+        E0 = self.adapterEdge[0](edge0)
+        E1 = self.adapterEdge[1](edge1)
 
         # BLK 4
         C4, S4 = self.CSFB4([A4, A4])
@@ -221,20 +213,28 @@ class Net(nn.Module):
         M2_1 = torch.cat([S2M_x2, A1], dim=1)
         M2_1 = self.merge[2](M2_1)
         # BLK 1
-        C1, S1 = self.CSFB2([M2_1, M2_1])
+        C1, S1 = self.CSFB1([M2_1, M2_1])
         C1_map, S1_map, S1M = self.map_gen[3](C1, S1)
 
-        S1M_x2 = F.interpolate(S1M, scale_factor=2, mode='bilinear', align_corners=False)
+        C1_E, S1_E = self.CSFB_E1([E1, S1M])
+        C1_E_map, S1_E_map, S1M_E = self.map_gen[5](C1_E, S1_E)
+
+        S1M_x2 = F.interpolate(S1M_E, scale_factor=2, mode='bilinear', align_corners=False)
         # merge
         M0_1 = torch.cat([S1M_x2, A0], dim=1)
         M0_1 = self.merge[3](M0_1)
         # BLK 0
         C0, S0 = self.CSFB0([M0_1, M0_1])
         C0_map, S0_map, S0M = self.map_gen[4](C0, S0)
+
+        C0_E, S0_E = self.CSFB_E1([E0, S0M])
+        C0_E_map, S0_E_map, S0M_E = self.map_gen[6](C0_E, S0_E)
         
         # ref
-        S0Map_x2 = F.interpolate(S0_map, scale_factor=2, mode='bilinear', align_corners=False)
-        C0Map_x2 = F.interpolate(C0_map, scale_factor=2, mode='bilinear', align_corners=False)
+        # S0Map_x2 = F.interpolate(S0_map, scale_factor=2, mode='bilinear', align_corners=False)
+        # C0Map_x2 = F.interpolate(C0_map, scale_factor=2, mode='bilinear', align_corners=False)
+        S0Map_x2 = F.interpolate(S0_E_map, scale_factor=2, mode='bilinear', align_corners=False)
+        C0Map_x2 = F.interpolate(C0_E_map, scale_factor=2, mode='bilinear', align_corners=False)
         SFM = torch.cat([S0Map_x2, C0Map_x2, x], dim=1)
         M0_end = self.merge_end(SFM)
         ctr_end, sal_end = self.CSFB_end([M0_end, M0_end])

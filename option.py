@@ -5,6 +5,7 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=1)
 
     # models
+    parser.add_argument('--arch', type=str, default='0', help='Backbone Architecture')
     parser.add_argument("--pretrain", type=str, default="31.pt")
     parser.add_argument("--model", type=str, default="RCSB")
     parser.add_argument("--GPU_ID", type=int, default=0)
@@ -26,15 +27,17 @@ def parse_args():
     parser.add_argument("--gclip", type=int, default=0)
     parser.add_argument("--R", type=int, default=3, help="recursion number")
     parser.add_argument("--G", type=int, default=1, help="config of G is written in model file, keep this G=1 here")
+    parser.add_argument('--gamma', type=float, default=0.1, help='Confidence ratio')
+    parser.add_argument('--frequency_radius', type=int, default=16, help='Frequency radius r in FFT')
     
     # loss
     parser.add_argument("--lmbda", type=int, default=3, 
                         help="lambda in loss function, it is divided by 10 to make it float, so here use integer")
 
     # misc
-    parser.add_argument("--test_only", action="store_true", default=True, help="test mode")
+    parser.add_argument("--test_only", action="store_true", default=False, help="test mode")
     parser.add_argument("--save_every_ckpt", action="store_true", default=False, help="save every ckpt")
-    parser.add_argument("--save_result", action="store_true", default=True, help="save last stage's pred")
+    parser.add_argument("--save_result", action="store_true", default=False, help="save last stage's pred")
     parser.add_argument("--save_all", action="store_true", help="save all stages' pred")
     parser.add_argument("--ckpt_root", type=str, default="/root/RCSB-PyTorch/ckpt")
     parser.add_argument("--save_root", type=str, default="/root/RCSB-PyTorch/output")
