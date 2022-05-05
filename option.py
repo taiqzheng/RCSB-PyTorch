@@ -21,7 +21,7 @@ def parse_args():
     parser.add_argument("--decay_step", type=int, default=20)
     parser.add_argument("--patch_size", type=int, default=224) # 256 for resnet-50, 224 for efficientnet-b0
     parser.add_argument("--batch_size", type=int, default=1)
-    parser.add_argument("--max_epoch", type=int, default=100)
+    parser.add_argument("--max_epoch", type=int, default=1)
     parser.add_argument("--num_workers", type=int, default=8)
     parser.add_argument("--num_features", type=int, default=64)
     parser.add_argument("--gclip", type=int, default=0)
@@ -41,6 +41,7 @@ def parse_args():
     parser.add_argument("--save_all", action="store_true", help="save all stages' pred")
     parser.add_argument("--ckpt_root", type=str, default="/root/RCSB-PyTorch/ckpt")
     parser.add_argument("--save_root", type=str, default="/root/RCSB-PyTorch/output")
+    parser.add_argument("--fft_root", type=str, default="/root/RCSB-PyTorch/fft")
 
     return parser.parse_args()
 

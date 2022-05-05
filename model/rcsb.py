@@ -171,7 +171,7 @@ class Net(nn.Module):
 
     def forward(self, x):
         
-        endpoints, edgeRefined = self.model.extract_endpoints(x)
+        endpoints, edgeRefined, fftresult = self.model.extract_endpoints(x)
         out0 = endpoints['reduction_1']
         out1 = endpoints['reduction_2']
         out2 = endpoints['reduction_3']

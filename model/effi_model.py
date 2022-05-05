@@ -260,11 +260,16 @@ class EfficientNet(nn.Module):
                 >>> print(endpoints['reduction_6'].shape)  # torch.Size([1, 1280, 7, 7])
         """
         endpoints = dict()
+        fftresult = dict()
         edgeRefined = dict()
 
         # Stem
         x = self._swish(self._bn0(self._conv_stem(inputs)))
         prev_x = x
+        fftresult['reduction_0'] = inputs
+        xr, edge = self.Frequency_Edge_Module1(inputs) #xr = inputs + edge
+        fftresult['refined_0'] = xr
+        fftresult['edge_0'] = edge 
 
         # Blocks
         for idx, block in enumerate(self._blocks):
@@ -274,9 +279,15 @@ class EfficientNet(nn.Module):
             x = block(x, drop_connect_rate=drop_connect_rate)
             if prev_x.size(2) > x.size(2):
                 endpoints['reduction_{}'.format(len(endpoints) + 1)] = prev_x
+                xr, edge = self.Frequency_Edge_Module1(prev_x) #xr = prev_x + edge
+                fftresult['refined_{}'.format(len(endpoints) + 1)] = xr
+                fftresult['edge_{}'.format(len(endpoints) + 1)] = edge
                 # print("idx = {}, x.shape = {}".format(idx-1, prev_x.shape))
             elif idx == len(self._blocks) - 1:
                 endpoints['reduction_{}'.format(len(endpoints) + 1)] = x
+                xr, edge = self.Frequency_Edge_Module1(x) #xr = x + edge
+                fftresult['refined_{}'.format(len(endpoints) + 1)] = xr
+                fftresult['edge_{}'.format(len(endpoints) + 1)] = edge
                 # print("idx = {}, x.shape = {}".format(idx, x.shape))
             prev_x = x
             if idx == 0:
@@ -291,9 +302,12 @@ class EfficientNet(nn.Module):
         # Head
         x = self._swish(self._bn1(self._conv_head(x)))
         endpoints['reduction_{}'.format(len(endpoints) + 1)] = x
+        xr, edge = self.Frequency_Edge_Module1(x) #xr = x + edge
+        fftresult['refined_{}'.format(len(endpoints) + 1)] = xr
+        fftresult['edge_{}'.format(len(endpoints) + 1)] = edge
         # print("idx = {}, x.shape = {}".format(idx, x.shape))
 
-        return endpoints, edgeRefined
+        return endpoints, edgeRefined, fftresult
 
     def extract_features(self, inputs):
         """use convolution layer to extract feature .

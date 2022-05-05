@@ -35,7 +35,7 @@ class Solver():
         self.optim = torch.optim.Adam([{'params':base},{'params':head}], opt.lr,betas=(0.9, 0.999), eps=1e-8)
 
         self.train_loader = generate_loader("train", opt)
-        self.eval_loader = generate_loader("test", opt)
+        # self.eval_loader = generate_loader("test", opt)
 
         self.best_mae, self.best_step = 1, 0
         
@@ -59,7 +59,8 @@ class Solver():
                 IMG = inputs[1].to(self.dev)
                 CTR = inputs[2].to(self.dev)
 
-                pred = self.net(IMG)
+                pred, fftresult = self.net(IMG)
+                self.saveFFT()
                 loss = self.loss_fn.get_value(pred, MASK, CTR)
 
                 loss.backward()
@@ -106,7 +107,7 @@ class Solver():
             
             b,c,h,w = MASK.shape
             
-            SOD = self.net(IMG)
+            SOD, fftresult = self.net(IMG)
             
             MASK = MASK.squeeze().detach().cpu().numpy()
             pred_sal, pred_ctr = SOD['sal'][-1], SOD['ctr'][-1]
@@ -140,3 +141,24 @@ class Solver():
         os.makedirs(self.opt.ckpt_root, exist_ok=True)
         save_path = os.path.join(self.opt.ckpt_root, str(step)+".pt")
         torch.save(self.net.state_dict(), save_path)
+
+    def saveFFT(self):
+        opt = self.opt
+
+        save_root = os.path.join(opt.fft_root, opt.dataset)
+        os.makedirs(save_root, exist_ok=True)
+        name = ['reduction_0', 'refined_0', 'edge_0','refined_1', 'edge_1',
+         'refined_2', 'edge_2','refined_3', 'edge_3','refined_4', 'edge_4',
+         'refined_5', 'edge_5','refined_6', 'edge_6']
+
+        for i, inputs in enumerate(tqdm(self.train_loader)):
+            IMG = inputs[1].to(self.dev)
+            NAME = inputs[2][0]
+                        
+            SOD, fftresult = self.net(IMG)
+            
+            for option in name:
+                image = fftresult[option].detach().cpu().numpy()[0][0]
+                save_path_image = os.path.join(save_root, "{}_{}.png".format(NAME, option))
+                io.imsave(save_path_image, image)
+
