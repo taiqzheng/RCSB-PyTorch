@@ -7,3 +7,5 @@ dataset/
 dataset/
 model/__pycache__/
 output/
+fft/
+.venv/

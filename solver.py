@@ -153,12 +153,12 @@ class Solver():
 
         for i, inputs in enumerate(tqdm(self.train_loader)):
             IMG = inputs[1].to(self.dev)
-            NAME = inputs[2][0]
+            # NAME = inputs[2][0]
                         
             SOD, fftresult = self.net(IMG)
             
             for option in name:
                 image = fftresult[option].detach().cpu().numpy()[0][0]
-                save_path_image = os.path.join(save_root, "{}_{}.png".format(NAME, option))
+                save_path_image = os.path.join(save_root, "{}.png".format(option))
                 io.imsave(save_path_image, image)
 

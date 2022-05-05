@@ -246,4 +246,4 @@ class Net(nn.Module):
         self.output['sal'] = [S4_map, S3_map, S2_map, S1_map, S0_map, sal_pred]
         self.output['ctr'] = [C4_map, C3_map, C2_map, C1_map, C0_map, ctr_pred]
         
-        return self.output
+        return self.output, fftresult

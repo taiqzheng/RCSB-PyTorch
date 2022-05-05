@@ -280,14 +280,14 @@ class EfficientNet(nn.Module):
             if prev_x.size(2) > x.size(2):
                 endpoints['reduction_{}'.format(len(endpoints) + 1)] = prev_x
                 xr, edge = self.Frequency_Edge_Module1(prev_x) #xr = prev_x + edge
-                fftresult['refined_{}'.format(len(endpoints) + 1)] = xr
-                fftresult['edge_{}'.format(len(endpoints) + 1)] = edge
+                fftresult['refined_{}'.format(len(endpoints))] = xr
+                fftresult['edge_{}'.format(len(endpoints))] = edge
                 # print("idx = {}, x.shape = {}".format(idx-1, prev_x.shape))
             elif idx == len(self._blocks) - 1:
                 endpoints['reduction_{}'.format(len(endpoints) + 1)] = x
                 xr, edge = self.Frequency_Edge_Module1(x) #xr = x + edge
-                fftresult['refined_{}'.format(len(endpoints) + 1)] = xr
-                fftresult['edge_{}'.format(len(endpoints) + 1)] = edge
+                fftresult['refined_{}'.format(len(endpoints))] = xr
+                fftresult['edge_{}'.format(len(endpoints))] = edge
                 # print("idx = {}, x.shape = {}".format(idx, x.shape))
             prev_x = x
             if idx == 0:
@@ -303,8 +303,8 @@ class EfficientNet(nn.Module):
         x = self._swish(self._bn1(self._conv_head(x)))
         endpoints['reduction_{}'.format(len(endpoints) + 1)] = x
         xr, edge = self.Frequency_Edge_Module1(x) #xr = x + edge
-        fftresult['refined_{}'.format(len(endpoints) + 1)] = xr
-        fftresult['edge_{}'.format(len(endpoints) + 1)] = edge
+        fftresult['refined_{}'.format(len(endpoints))] = xr
+        fftresult['edge_{}'.format(len(endpoints))] = edge
         # print("idx = {}, x.shape = {}".format(idx, x.shape))
 
         return endpoints, edgeRefined, fftresult
