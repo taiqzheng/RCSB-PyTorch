@@ -7,3 +7,4 @@ dataset/
 dataset/
 model/__pycache__/
 output/
+.venv/
