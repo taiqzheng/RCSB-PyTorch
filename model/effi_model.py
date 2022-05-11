@@ -260,7 +260,6 @@ class EfficientNet(nn.Module):
                 >>> print(endpoints['reduction_6'].shape)  # torch.Size([1, 1280, 7, 7])
         """
         endpoints = dict()
-        edgeRefined = dict()
 
         # Stem
         x = self._swish(self._bn0(self._conv_stem(inputs)))
@@ -279,21 +278,13 @@ class EfficientNet(nn.Module):
                 endpoints['reduction_{}'.format(len(endpoints) + 1)] = x
                 # print("idx = {}, x.shape = {}".format(idx, x.shape))
             prev_x = x
-            if idx == 0:
-                xr, edge = self.Frequency_Edge_Module1(x) #xr = x + edge
-                edgeRefined['refined_1'] = xr
-                # print("idx = {}, xr1.shape = {}".format(idx, xr.shape))
-            if idx == 2:
-                xr, edge = self.Frequency_Edge_Module1(x)
-                edgeRefined['refined_2'] = xr
-                # print("idx = {}, xr2.shape = {}".format(idx, xr.shape))
 
         # Head
         x = self._swish(self._bn1(self._conv_head(x)))
         endpoints['reduction_{}'.format(len(endpoints) + 1)] = x
         # print("idx = {}, x.shape = {}".format(idx, x.shape))
 
-        return endpoints, edgeRefined
+        return endpoints
 
     def extract_features(self, inputs):
         """use convolution layer to extract feature .

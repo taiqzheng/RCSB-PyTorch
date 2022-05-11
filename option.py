@@ -20,7 +20,7 @@ def parse_args():
     parser.add_argument("--decay", type=str, default="20-40-60-80")
     parser.add_argument("--decay_step", type=int, default=20)
     parser.add_argument("--patch_size", type=int, default=224) # 256 for resnet-50, 224 for efficientnet-b0
-    parser.add_argument("--batch_size", type=int, default=1)
+    parser.add_argument("--batch_size", type=int, default=4)
     parser.add_argument("--max_epoch", type=int, default=100)
     parser.add_argument("--num_workers", type=int, default=8)
     parser.add_argument("--num_features", type=int, default=64)
@@ -28,7 +28,6 @@ def parse_args():
     parser.add_argument("--R", type=int, default=3, help="recursion number")
     parser.add_argument("--G", type=int, default=1, help="config of G is written in model file, keep this G=1 here")
     parser.add_argument('--gamma', type=float, default=0.1, help='Confidence ratio')
-    parser.add_argument('--frequency_radius', type=int, default=16, help='Frequency radius r in FFT')
     
     # loss
     parser.add_argument("--lmbda", type=int, default=3, 
@@ -36,7 +35,7 @@ def parse_args():
 
     # misc
     parser.add_argument("--test_only", action="store_true", default=False, help="test mode")
-    parser.add_argument("--save_every_ckpt", action="store_true", default=False, help="save every ckpt")
+    parser.add_argument("--save_every_ckpt", action="store_true", default=True, help="save every ckpt")
     parser.add_argument("--save_result", action="store_true", default=False, help="save last stage's pred")
     parser.add_argument("--save_all", action="store_true", help="save all stages' pred")
     parser.add_argument("--ckpt_root", type=str, default="/root/RCSB-PyTorch/ckpt")
