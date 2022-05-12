@@ -36,7 +36,7 @@ def parse_args():
 
     # misc
     parser.add_argument("--test_only", action="store_true", default=False, help="test mode")
-    parser.add_argument("--save_every_ckpt", action="store_true", default=False, help="save every ckpt")
+    parser.add_argument("--save_every_ckpt", action="store_true", default=True, help="save every ckpt")
     parser.add_argument("--save_result", action="store_true", default=False, help="save last stage's pred")
     parser.add_argument("--save_all", action="store_true", help="save all stages' pred")
     parser.add_argument("--ckpt_root", type=str, default="/root/RCSB-PyTorch/ckpt")

@@ -261,10 +261,16 @@ class EfficientNet(nn.Module):
         """
         endpoints = dict()
         edgeRefined = dict()
+        fftresult = dict()
 
         # Stem
         x = self._swish(self._bn0(self._conv_stem(inputs)))
         prev_x = x
+        # fftresult['reduction_0'] = inputs
+        xr, edge = self.Frequency_Edge_Module1(inputs) #xr = inputs + edge
+        # fftresult['refined_0'] = xr
+        fftresult['edge_0'] = edge
+        # print("edge.shape = {}".format(edge.shape))
 
         # Blocks
         for idx, block in enumerate(self._blocks):
@@ -274,26 +280,21 @@ class EfficientNet(nn.Module):
             x = block(x, drop_connect_rate=drop_connect_rate)
             if prev_x.size(2) > x.size(2):
                 endpoints['reduction_{}'.format(len(endpoints) + 1)] = prev_x
-                # print("idx = {}, x.shape = {}".format(idx-1, prev_x.shape))
             elif idx == len(self._blocks) - 1:
                 endpoints['reduction_{}'.format(len(endpoints) + 1)] = x
-                # print("idx = {}, x.shape = {}".format(idx, x.shape))
             prev_x = x
-            if idx == 0:
-                xr, edge = self.Frequency_Edge_Module1(x) #xr = x + edge
-                edgeRefined['refined_1'] = xr
-                # print("idx = {}, xr1.shape = {}".format(idx, xr.shape))
-            if idx == 2:
-                xr, edge = self.Frequency_Edge_Module1(x)
-                edgeRefined['refined_2'] = xr
-                # print("idx = {}, xr2.shape = {}".format(idx, xr.shape))
+            # if idx == 0:
+            #     xr, edge = self.Frequency_Edge_Module1(x) #xr = x + edge
+            #     edgeRefined['refined_1'] = xr
+            # if idx == 2:
+            #     xr, edge = self.Frequency_Edge_Module1(x)
+            #     edgeRefined['refined_2'] = xr
 
         # Head
         x = self._swish(self._bn1(self._conv_head(x)))
         endpoints['reduction_{}'.format(len(endpoints) + 1)] = x
-        # print("idx = {}, x.shape = {}".format(idx, x.shape))
 
-        return endpoints, edgeRefined
+        return endpoints, fftresult
 
     def extract_features(self, inputs):
         """use convolution layer to extract feature .
