@@ -22,7 +22,6 @@ from model.effi_utils import (
     MemoryEfficientSwish,
     calculate_output_image_size
 )
-from model.fft import Frequency_Edge_Module
 from option import get_option
 
 opt = get_option()
@@ -172,8 +171,6 @@ class EfficientNet(nn.Module):
         self._global_params = global_params
         self._blocks_args = blocks_args
         self.block_idx, self.channels = get_model_shape()
-        self.Frequency_Edge_Module1 = Frequency_Edge_Module(radius=opt.frequency_radius,
-                                                           channel=self.channels[0])
 
         # Batch norm parameters
         bn_mom = 1 - self._global_params.batch_norm_momentum
