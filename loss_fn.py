@@ -49,7 +49,8 @@ class ConfidentLoss:
 
             scale = int(sal_gt.size(-1) / sal_pred.size(-1))
             if scale > 1:
-                sal_y = F.avg_pool2d(sal_gt, kernel_size=scale, stride=scale).gt(0.5).float()
+                sal_y = F.interpolate(sal_gt, size=sal_pred.size(-1), mode='bilinear', align_corners=False).gt(0.5).float()
+                # sal_y = F.avg_pool2d(sal_gt, kernel_size=scale, stride=scale).gt(0.5).float()
                 ctr_y = self.gen_ctr_torch(sal_y, kernel_size=3).gt(0.5).float()
             else:
                 sal_y = sal_gt.gt(0.5).float()

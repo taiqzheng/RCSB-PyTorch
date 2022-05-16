@@ -22,7 +22,6 @@ from model.effi_utils import (
     MemoryEfficientSwish,
     calculate_output_image_size
 )
-from model.fft import Frequency_Edge_Module
 from option import get_option
 
 opt = get_option()
@@ -172,8 +171,6 @@ class EfficientNet(nn.Module):
         self._global_params = global_params
         self._blocks_args = blocks_args
         self.block_idx, self.channels = get_model_shape()
-        self.Frequency_Edge_Module1 = Frequency_Edge_Module(radius=opt.frequency_radius,
-                                                           channel=self.channels[0])
 
         # Batch norm parameters
         bn_mom = 1 - self._global_params.batch_norm_momentum
@@ -260,17 +257,10 @@ class EfficientNet(nn.Module):
                 >>> print(endpoints['reduction_6'].shape)  # torch.Size([1, 1280, 7, 7])
         """
         endpoints = dict()
-        edgeRefined = dict()
-        fftresult = dict()
 
         # Stem
         x = self._swish(self._bn0(self._conv_stem(inputs)))
         prev_x = x
-        # fftresult['reduction_0'] = inputs
-        xr, edge = self.Frequency_Edge_Module1(inputs) #xr = inputs + edge
-        # fftresult['refined_0'] = xr
-        fftresult['edge_0'] = edge
-        # print("edge.shape = {}".format(edge.shape))
 
         # Blocks
         for idx, block in enumerate(self._blocks):
@@ -280,21 +270,18 @@ class EfficientNet(nn.Module):
             x = block(x, drop_connect_rate=drop_connect_rate)
             if prev_x.size(2) > x.size(2):
                 endpoints['reduction_{}'.format(len(endpoints) + 1)] = prev_x
+                # print("reduction_{}.shape:{}".format(len(endpoints), prev_x.shape))
             elif idx == len(self._blocks) - 1:
                 endpoints['reduction_{}'.format(len(endpoints) + 1)] = x
+                # print("reduction_{}.shape:{}".format(len(endpoints), x.shape))
             prev_x = x
-            # if idx == 0:
-            #     xr, edge = self.Frequency_Edge_Module1(x) #xr = x + edge
-            #     edgeRefined['refined_1'] = xr
-            # if idx == 2:
-            #     xr, edge = self.Frequency_Edge_Module1(x)
-            #     edgeRefined['refined_2'] = xr
 
         # Head
         x = self._swish(self._bn1(self._conv_head(x)))
         endpoints['reduction_{}'.format(len(endpoints) + 1)] = x
+        # print("reduction_{}.shape:{}".format(len(endpoints), x.shape))
 
-        return endpoints, fftresult
+        return endpoints
 
     def extract_features(self, inputs):
         """use convolution layer to extract feature .

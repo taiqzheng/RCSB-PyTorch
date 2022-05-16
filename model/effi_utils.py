@@ -23,17 +23,17 @@ def get_model_shape():
         block_idx = [0, 2, 4, 10, 15]
         channels = [16, 24, 40, 112, 320]
     elif opt.arch == '1':
-        block_idx = [4, 7, 15, 22]
-        channels = [24, 40, 112, 320]
+        block_idx = [0, 4, 7, 15, 22]
+        channels = [16, 24, 40, 112, 320]
     elif opt.arch == '2':
-        block_idx = [4, 7, 15, 22]
-        channels = [24, 48, 120, 352]
+        block_idx = [0, 4, 7, 15, 22]
+        channels = [16, 24, 48, 120, 352]
     elif opt.arch == '3':
-        block_idx = [4, 7, 17, 25]
-        channels = [32, 48, 136, 384]
+        block_idx = [0, 4, 7, 17, 25]
+        channels = [24 ,32, 48, 136, 384]
     elif opt.arch == '4':
-        block_idx = [5, 9, 21, 31]
-        channels = [32, 56, 160, 448]
+        block_idx = [0, 5, 9, 21, 31]
+        channels = [24 ,32, 56, 160, 448]
     elif opt.arch == '5':
         block_idx = [7, 12, 26, 38]
         channels = [40, 64, 176, 512]

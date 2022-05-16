@@ -141,7 +141,7 @@ class Net(nn.Module):
         G = opt.G
         R = opt.R
 
-        self.model = EfficientNet.from_pretrained('efficientnet-b0')
+        self.model = EfficientNet.from_pretrained('efficientnet-b2', advprop=True)
 
         self.CSFB0 = nn.Sequential(*[CSFBBlock(num_features, R=R) for i in range(2*G)])
         self.CSFB1 = nn.Sequential(*[CSFBBlock(num_features, R=R) for i in range(2*G)])
@@ -160,23 +160,22 @@ class Net(nn.Module):
         self.merge = nn.ModuleList([MergeAdapter(in_features=num_features*2,
                                                  out_features=num_features) for i in range(4)])
 
-        self.merge_end = MergeAdapter(in_features=8,
+        self.merge_end = MergeAdapter(in_features=5,
                                       out_features=num_features)
 
         # self.adapter = nn.ModuleList([ChannelAdapter(num_features=channel) for channel in [64, 256, 512, 1024, 2048]])
-        self.adapter = nn.ModuleList([ChannelAdapter(num_features=channel) for channel in [16, 24, 40, 112, 1280]])
+        self.adapter = nn.ModuleList([ChannelAdapter(num_features=channel) for channel in [16, 24, 48, 120, 352]])
         self.sal_final_scale = nn.Parameter(torch.tensor(1.), requires_grad=True)
         self.ctr_final_scale = nn.Parameter(torch.tensor(1.), requires_grad=True)
 
     def forward(self, x):
         
-        endpoints, fftresult = self.model.extract_endpoints(x)
+        endpoints = self.model.extract_endpoints(x)
         out0 = endpoints['reduction_1']
         out1 = endpoints['reduction_2']
         out2 = endpoints['reduction_3']
         out3 = endpoints['reduction_4']
-        out4 = endpoints['reduction_6']
-        edge = fftresult['edge_0']
+        out4 = endpoints['reduction_5']
         
         A0 = self.adapter[0](out0)
         A1 = self.adapter[1](out1)
@@ -188,7 +187,7 @@ class Net(nn.Module):
         C4, S4 = self.CSFB4([A4, A4])
         C4_map, S4_map, S4M = self.map_gen[0](C4, S4)
 
-        S4M_x2 = F.interpolate(S4M, scale_factor=2, mode='bilinear', align_corners=False)
+        S4M_x2 = F.interpolate(S4M, size=17, mode='bilinear', align_corners=False)
         # merge
         M4_3 = torch.cat([S4M_x2, A3], dim=1)
         M4_3 = self.merge[0](M4_3)
@@ -196,7 +195,7 @@ class Net(nn.Module):
         C3, S3 = self.CSFB3([M4_3, M4_3])
         C3_map, S3_map, S3M = self.map_gen[1](C3, S3)
 
-        S3M_x2 = F.interpolate(S3M, scale_factor=2, mode='bilinear', align_corners=False)
+        S3M_x2 = F.interpolate(S3M, size=33, mode='bilinear', align_corners=False)
         # merge
         M3_2 = torch.cat([S3M_x2, A2], dim=1)
         M3_2 = self.merge[1](M3_2)
@@ -204,7 +203,7 @@ class Net(nn.Module):
         C2, S2 = self.CSFB2([M3_2, M3_2])
         C2_map, S2_map, S2M = self.map_gen[2](C2, S2)
 
-        S2M_x2 = F.interpolate(S2M, scale_factor=2, mode='bilinear', align_corners=False)
+        S2M_x2 = F.interpolate(S2M, size=65, mode='bilinear', align_corners=False)
         # merge
         M2_1 = torch.cat([S2M_x2, A1], dim=1)
         M2_1 = self.merge[2](M2_1)
@@ -223,7 +222,7 @@ class Net(nn.Module):
         # ref
         S0Map_x2 = F.interpolate(S0_map, scale_factor=2, mode='bilinear', align_corners=False)
         C0Map_x2 = F.interpolate(C0_map, scale_factor=2, mode='bilinear', align_corners=False)
-        SFM = torch.cat([S0Map_x2, C0Map_x2, x, edge], dim=1)
+        SFM = torch.cat([S0Map_x2, C0Map_x2, x], dim=1)
         M0_end = self.merge_end(SFM)
         ctr_end, sal_end = self.CSFB_end([M0_end, M0_end])
         

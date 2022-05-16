@@ -5,7 +5,7 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=1)
 
     # models
-    parser.add_argument('--arch', type=str, default='0', help='Backbone Architecture')
+    parser.add_argument('--arch', type=str, default='2', help='Backbone Architecture')
     parser.add_argument("--pretrain", type=str, default="")
     parser.add_argument("--model", type=str, default="RCSB")
     parser.add_argument("--GPU_ID", type=int, default=0)
@@ -19,8 +19,8 @@ def parse_args():
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--decay", type=str, default="20-40-60-80")
     parser.add_argument("--decay_step", type=int, default=20)
-    parser.add_argument("--patch_size", type=int, default=224) # 256 for resnet-50, 224 for efficientnet-b0
-    parser.add_argument("--batch_size", type=int, default=4)
+    parser.add_argument("--patch_size", type=int, default=260) # 256 for resnet-50, 224 for efficientnet-b0, 380 b4,300 b3, 260 b2, 240 b1
+    parser.add_argument("--batch_size", type=int, default=3)
     parser.add_argument("--max_epoch", type=int, default=100)
     parser.add_argument("--num_workers", type=int, default=8)
     parser.add_argument("--num_features", type=int, default=64)
