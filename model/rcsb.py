@@ -9,11 +9,17 @@ from model.effi_utils import efficientnet
 class CSFBUnit(nn.Module):
     def __init__(self,in_channel):
         super(CSFBUnit,self).__init__()
-        self.conv_head_ctr = nn.Sequential(nn.Conv2d(in_channel,in_channel,kernel_size=3,padding=1, bias=True),
-                                           nn.BatchNorm2d(in_channel),
+        self.conv_head_ctr = nn.Sequential(nn.Conv2d(32,32,kernel_size=3,padding=1, bias=True),
+                                           nn.BatchNorm2d(32),
                                            nn.LeakyReLU(inplace=True))
-        self.conv_head_sal = nn.Sequential(nn.Conv2d(in_channel,in_channel,kernel_size=3,padding=1, bias=True),
-                                           nn.BatchNorm2d(in_channel),
+        self.conv_head_sal = nn.Sequential(nn.Conv2d(32,32,kernel_size=3,padding=1, bias=True),
+                                           nn.BatchNorm2d(32),
+                                           nn.LeakyReLU(inplace=True))
+        self.conv_dilated_ctr = nn.Sequential(nn.Conv2d(32,32,kernel_size=3,padding=2, bias=True, dilation=2),
+                                           nn.BatchNorm2d(32),
+                                           nn.LeakyReLU(inplace=True))
+        self.conv_dilated_sal = nn.Sequential(nn.Conv2d(32,32,kernel_size=3,padding=2, bias=True, dilation=2),
+                                           nn.BatchNorm2d(32),
                                            nn.LeakyReLU(inplace=True))
         self.merge_sal = nn.Sequential(nn.Conv2d(in_channel*2,in_channel,kernel_size=1,padding=0, bias=True),
                                        nn.GroupNorm(in_channel//2, in_channel),
@@ -30,9 +36,19 @@ class CSFBUnit(nn.Module):
         
     def forward(self, x):
         ctr, sal = x
-        ctr = self.conv_head_ctr(ctr)
-        sal = self.conv_head_sal(sal)
+        _ctr = torch.split(ctr, 32, 1)
+        _sal = torch.split(sal, 32, 1)
+        _ctr0 = self.conv_head_ctr(_ctr[0])
+        _sal0 = self.conv_head_sal(_sal[0])
+
+        _ctr1 = _ctr0 + _ctr[1]
+        _sal1 = _sal0 + _sal[1]
+        _ctr1 = self.conv_dilated_ctr(_ctr1)
+        _sal1 = self.conv_dilated_sal(_sal1)
         
+        ctr = torch.cat([_ctr0, _ctr1], dim=1)
+        sal = torch.cat([_sal0, _sal1], dim=1)
+
         ctr_n_sal = torch.cat([ctr, sal], dim=1)
         ctr_sal = self.merge_sal(ctr_n_sal)
         sal_ctr = self.merge_ctr(ctr_n_sal)
@@ -143,8 +159,8 @@ class Net(nn.Module):
 
         self.model = EfficientNet.from_pretrained('efficientnet-b2', advprop=True)
 
-        self.CSFB0 = nn.Sequential(*[CSFBBlock(num_features, R=R) for i in range(2*G)])
-        self.CSFB1 = nn.Sequential(*[CSFBBlock(num_features, R=R) for i in range(2*G)])
+        self.CSFB0 = nn.Sequential(*[CSFBBlock(num_features, R=R) for i in range(3*G)])
+        self.CSFB1 = nn.Sequential(*[CSFBBlock(num_features, R=R) for i in range(3*G)])
         self.CSFB2 = nn.Sequential(*[CSFBBlock(num_features, R=R) for i in range(2*G)])
         self.CSFB3 = nn.Sequential(*[CSFBBlock(num_features, R=R) for i in range(2*G)])
         self.CSFB4 = nn.Sequential(*[CSFBBlock(num_features, R=R) for i in range(1*G)])
